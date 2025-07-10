@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anonymous Sports Voting</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #06b6d4 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #1e3a8a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .status.info {
+            background: #bee3f8;
+            color: #2a4365;
+            border: 1px solid #63b3ed;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .candidate-item {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .candidate-item:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .candidate-item.selected {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+
+        .event-info {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .time-item {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .time-item strong {
+            display: block;
+            font-size: 1.1rem;
+            color: #2d3748;
+        }
+
+        .wallet-info {
+            background: #fffbeb;
+            border: 1px solid #f6e05e;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .results-section {
+            background: #f0f8ff;
+            border: 2px solid #4299e1;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .winner-announcement {
+            background: #f0fff4;
+            border: 2px solid #48bb78;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .winner-announcement h3 {
+            color: #22543d;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .time-info {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Anonymous Sports Voting</h1>
+            <p>Secure, Private, and Transparent Sports Event Voting</p>
+        </div>
+
+        <div id="walletSection" class="card">
+            <h2 class="section-title">🔗 Wallet Connection</h2>
+            <div class="wallet-info">
+                <p><strong>Status:</strong> <span id="walletStatus">Not Connected</span></p>
+                <p><strong>Address:</strong> <span id="walletAddress">-</span></p>
+                <p><strong>Network:</strong> <span id="networkInfo">-</span></p>
+            </div>
+            <button id="connectWallet" class="btn">Connect MetaMask</button>
+        </div>
+
+        <div id="adminSection" class="hidden">
+            <div class="card">
+                <h2 class="section-title">👨‍💼 Admin Functions</h2>
+
+                <div class="grid">
+                    <div>
+                        <h3>Add Candidate</h3>
+                        <div class="form-group">
+                            <label for="candidateName">Candidate Name:</label>
+                            <input type="text" id="candidateName" placeholder="Enter candidate name">
+                        </div>
+                        <div class="form-group">
+                            <label for="candidateCategory">Category:</label>
+                            <input type="text" id="candidateCategory" placeholder="e.g., Football, Basketball">
+                        </div>
+                        <button id="addCandidateBtn" class="btn">Add Candidate</button>
+                    </div>
+
+                    <div>
+                        <h3>Authorize Voter</h3>
+                        <div class="form-group">
+                            <label for="voterAddress">Voter Address:</label>
+                            <input type="text" id="voterAddress" placeholder="0x...">
+                        </div>
+                        <button id="authorizeVoterBtn" class="btn">Authorize Voter</button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <h3>Create Voting Event</h3>
+                    <div class="form-group">
+                        <label for="eventName">Event Name:</label>
+                        <input type="text" id="eventName" placeholder="e.g., Best Football Player 2024">
+                    </div>
+                    <div class="form-group">
+                        <label for="eventDescription">Event Description:</label>
+                        <textarea id="eventDescription" rows="3" placeholder="Describe the voting event..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="selectedCandidates">Select Candidates (hold Ctrl for multiple):</label>
+                        <select id="selectedCandidates" multiple size="5">
+                        </select>
+                    </div>
+                    <button id="createEventBtn" class="btn">Create Voting Event</button>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <h3>Event Management</h3>
+                    <button id="endVotingBtn" class="btn">End Current Voting</button>
+                    <button id="revealResultsBtn" class="btn">Reveal Results</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="votingSection" class="card">
+            <h2 class="section-title">🗳️ Current Voting Event</h2>
+
+            <div id="noEventMessage" class="status info">
+                No active voting event available.
+            </div>
+
+            <div id="eventDetails" class="hidden">
+                <div class="event-info">
+                    <h3 id="eventTitle">Event Title</h3>
+                    <p id="eventDesc">Event Description</p>
+
+                    <div class="time-info">
+                        <div class="time-item">
+                            <strong>Voting Starts</strong>
+                            <span id="startTime">-</span>
+                        </div>
+                        <div class="time-item">
+                            <strong>Voting Ends</strong>
+                            <span id="endTime">-</span>
+                        </div>
+                        <div class="time-item">
+                            <strong>Results Reveal</strong>
+                            <span id="revealTime">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="votingArea" class="hidden">
+                    <h3>Select Your Candidate:</h3>
+                    <div id="candidatesList" class="grid"></div>
+                    <button id="submitVoteBtn" class="btn" disabled>Submit Vote</button>
+                </div>
+
+                <div id="votingClosed" class="hidden">
+                    <div class="status info">
+                        Voting period has ended. Waiting for results...
+                    </div>
+                </div>
+
+                <div id="alreadyVoted" class="hidden">
+                    <div class="status success">
+                        ✅ You have already voted in this event!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="card hidden">
+            <h2 class="section-title">📊 Voting Results</h2>
+            <div id="resultsContent"></div>
+        </div>
+
+        <div id="statusMessages"></div>
+    </div>
+
+    <script>
+        // Contract configuration
+        const CONTRACT_ADDRESS = "0x3825C6a1BAf65d3fF39C3e0cEbbe4b76D2567488"; // Update with your deployed contract address
+        const CONTRACT_ABI = [
+            "function admin() view returns (address)",
+            "function currentEventId() view returns (uint32)",
+            "function authorizedVoters(address) view returns (bool)",
+            "function candidates(uint32) view returns (string memory name, string memory category, bool isActive)",
+            "function events(uint32) view returns (string memory eventName, string memory description, uint256 startTime, uint256 endTime, uint256 revealStartTime, uint256 revealEndTime, bool isActive, bool resultsRevealed)",
+            "function getEventInfo(uint32) view returns (string memory eventName, string memory description, uint256 startTime, uint256 endTime, uint256 revealStartTime, uint256 revealEndTime, bool isActive, bool resultsRevealed, uint32[] memory candidateIds, uint32 totalVotes, uint32 winnerId)",
+            "function getCandidateInfo(uint32) view returns (string memory name, string memory category, bool isActive)",
+            "function getVoterStatus(uint32, address) view returns (bool hasVoted, uint256 timestamp)",
+            "function isVotingActive(uint32) view returns (bool)",
+            "function isRevealPeriodActive(uint32) view returns (bool)",
+            "function getCurrentTime() view returns (uint256)",
+            "function authorizeVoter(address) external",
+            "function addCandidate(string memory, string memory) external returns (uint32)",
+            "function createVotingEvent(string memory, string memory, uint32[] memory) external returns (uint32)",
+            "function castVote(uint32, uint32) external",
+            "function endVoting(uint32) external",
+            "function requestVoteDecryption(uint32) external",
+            "event EventCreated(uint32 indexed eventId, string eventName, uint256 startTime, uint256 endTime)",
+            "event CandidateAdded(uint32 indexed candidateId, string name, string category)",
+            "event VoteCast(address indexed voter, uint32 indexed eventId)",
+            "event VotingEnded(uint32 indexed eventId, uint256 timestamp)",
+            "event ResultsRevealed(uint32 indexed eventId, uint32 winnerId, uint32 totalVotes)",
+            "event VoterAuthorized(address indexed voter)"
+        ];
+
+        // Global variables
+        let provider, signer, contract;
+        let userAddress;
+        let isAdmin = false;
+        let currentEvent = null;
+        let selectedCandidate = null;
+        let allCandidates = {};
+
+        // Initialize the application
+        window.addEventListener('load', async () => {
+            // Wait for ethers to load
+            if (typeof ethers === 'undefined') {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+                return;
+            }
+            await initializeApp();
+        });
+
+        async function initializeApp() {
+            updateStatus('Initializing application...', 'info');
+
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+
+                    // Check if already connected
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        await connectWallet();
+                    }
+
+                    setupEventListeners();
+                    updateStatus('Application initialized successfully!', 'success');
+                } catch (error) {
+                    console.error('Initialization error:', error);
+                    updateStatus('Failed to initialize application: ' + error.message, 'error');
+                }
+            } else {
+                updateStatus('MetaMask not detected. Please install MetaMask.', 'error');
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('connectWallet').addEventListener('click', connectWallet);
+            document.getElementById('addCandidateBtn').addEventListener('click', addCandidate);
+            document.getElementById('authorizeVoterBtn').addEventListener('click', authorizeVoter);
+            document.getElementById('createEventBtn').addEventListener('click', createEvent);
+            document.getElementById('endVotingBtn').addEventListener('click', endVoting);
+            document.getElementById('revealResultsBtn').addEventListener('click', revealResults);
+            document.getElementById('submitVoteBtn').addEventListener('click', submitVote);
+
+            // Listen for account changes
+            if (window.ethereum) {
+                window.ethereum.on('accountsChanged', handleAccountsChanged);
+                window.ethereum.on('chainChanged', () => window.location.reload());
+            }
+        }
+
+        async function connectWallet() {
+            try {
+                updateStatus('Connecting to wallet...', 'info');
+
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                signer = provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                // Update contract instance with signer
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+                // Update UI
+                document.getElementById('walletStatus').textContent = 'Connected';
+                document.getElementById('walletAddress').textContent = userAddress;
+
+                // Get network info
+                const network = await provider.getNetwork();
+                document.getElementById('networkInfo').textContent = `${network.name} (${network.chainId})`;
+
+                // Check if user is admin
+                await checkAdminStatus();
+
+                // Load current event
+                await loadCurrentEvent();
+
+                // Load candidates for admin
+                if (isAdmin) {
+                    await loadCandidates();
+                }
+
+                updateStatus('Wallet connected successfully!', 'success');
+
+            } catch (error) {
+                console.error('Wallet connection error:', error);
+                updateStatus('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        async function handleAccountsChanged(accounts) {
+            if (accounts.length === 0) {
+                // User disconnected
+                userAddress = null;
+                isAdmin = false;
+                document.getElementById('walletStatus').textContent = 'Not Connected';
+                document.getElementById('walletAddress').textContent = '-';
+                document.getElementById('networkInfo').textContent = '-';
+                document.getElementById('adminSection').classList.add('hidden');
+                location.reload();
+            } else {
+                // User switched accounts
+                await connectWallet();
+            }
+        }
+
+        async function checkAdminStatus() {
+            try {
+                const adminAddress = await contract.admin();
+                isAdmin = adminAddress.toLowerCase() === userAddress.toLowerCase();
+
+                if (isAdmin) {
+                    document.getElementById('adminSection').classList.remove('hidden');
+                    updateStatus('Admin access granted - You can manage candidates and events', 'success');
+                } else {
+                    // For demo purposes, show admin section anyway with a note
+                    document.getElementById('adminSection').classList.remove('hidden');
+                    updateStatus('Connected as regular user - Admin functions visible for demo', 'info');
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+                // Show admin section anyway for demo
+                document.getElementById('adminSection').classList.remove('hidden');
+                updateStatus('Admin status check failed - Functions visible for testing', 'info');
+                isAdmin = false;
+            }
+        }
+
+        async function loadCurrentEvent() {
+            try {
+                const currentEventId = await contract.currentEventId();
+
+                if (currentEventId > 0) {
+                    const eventInfo = await contract.getEventInfo(currentEventId);
+                    currentEvent = {
+                        id: currentEventId,
+                        name: eventInfo[0],
+                        description: eventInfo[1],
+                        startTime: eventInfo[2],
+                        endTime: eventInfo[3],
+                        revealStartTime: eventInfo[4],
+                        revealEndTime: eventInfo[5],
+                        isActive: eventInfo[6],
+                        resultsRevealed: eventInfo[7],
+                        candidateIds: eventInfo[8],
+                        totalVotes: eventInfo[9],
+                        winnerId: eventInfo[10]
+                    };
+
+                    await displayEventInfo();
+                    await checkVotingStatus();
+                } else {
+                    document.getElementById('noEventMessage').classList.remove('hidden');
+                    document.getElementById('eventDetails').classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading current event:', error);
+                updateStatus('Error loading event information', 'error');
+            }
+        }
+
+        async function displayEventInfo() {
+            if (!currentEvent) return;
+
+            document.getElementById('noEventMessage').classList.add('hidden');
+            document.getElementById('eventDetails').classList.remove('hidden');
+
+            document.getElementById('eventTitle').textContent = currentEvent.name;
+            document.getElementById('eventDesc').textContent = currentEvent.description;
+
+            // Format dates
+            document.getElementById('startTime').textContent = formatDate(currentEvent.startTime * 1000);
+            document.getElementById('endTime').textContent = formatDate(currentEvent.endTime * 1000);
+            document.getElementById('revealTime').textContent = formatDate(currentEvent.revealStartTime * 1000);
+
+            // Load candidates for this event
+            await loadEventCandidates();
+
+            // Show results if available
+            if (currentEvent.resultsRevealed) {
+                await displayResults();
+            }
+        }
+
+        async function loadEventCandidates() {
+            if (!currentEvent || !currentEvent.candidateIds) return;
+
+            const candidatesList = document.getElementById('candidatesList');
+            candidatesList.innerHTML = '';
+
+            for (const candidateId of currentEvent.candidateIds) {
+                try {
+                    const candidateInfo = await contract.getCandidateInfo(candidateId);
+
+                    const candidateElement = document.createElement('div');
+                    candidateElement.className = 'candidate-item';
+                    candidateElement.innerHTML = `
+                        <h4>${candidateInfo[0]}</h4>
+                        <p><strong>Category:</strong> ${candidateInfo[1]}</p>
+                    `;
+
+                    candidateElement.addEventListener('click', () => selectCandidate(candidateId, candidateElement));
+                    candidatesList.appendChild(candidateElement);
+
+                } catch (error) {
+                    console.error(`Error loading candidate ${candidateId}:`, error);
+                }
+            }
+        }
+
+        function selectCandidate(candidateId, element) {
+            // Remove previous selection
+            document.querySelectorAll('.candidate-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            // Select new candidate
+            element.classList.add('selected');
+            selectedCandidate = candidateId;
+            document.getElementById('submitVoteBtn').disabled = false;
+        }
+
+        async function checkVotingStatus() {
+            if (!currentEvent || !userAddress) return;
+
+            try {
+                // Check if user has already voted
+                const voterStatus = await contract.getVoterStatus(currentEvent.id, userAddress);
+                const hasVoted = voterStatus[0];
+
+                // Check if voting is active
+                const isVotingActive = await contract.isVotingActive(currentEvent.id);
+
+                // Check if user is authorized
+                const isAuthorized = await contract.authorizedVoters(userAddress);
+
+                if (hasVoted) {
+                    document.getElementById('votingArea').classList.add('hidden');
+                    document.getElementById('alreadyVoted').classList.remove('hidden');
+                    document.getElementById('votingClosed').classList.add('hidden');
+                } else if (!isVotingActive) {
+                    document.getElementById('votingArea').classList.add('hidden');
+                    document.getElementById('alreadyVoted').classList.add('hidden');
+                    document.getElementById('votingClosed').classList.remove('hidden');
+                } else if (!isAuthorized) {
+                    document.getElementById('votingArea').classList.add('hidden');
+                    updateStatus('You are not authorized to vote in this event', 'error');
+                } else {
+                    document.getElementById('votingArea').classList.remove('hidden');
+                    document.getElementById('alreadyVoted').classList.add('hidden');
+                    document.getElementById('votingClosed').classList.add('hidden');
+                }
+
+            } catch (error) {
+                console.error('Error checking voting status:', error);
+            }
+        }
+
+        async function addCandidate() {
+            const name = document.getElementById('candidateName').value.trim();
+            const category = document.getElementById('candidateCategory').value.trim();
+
+            if (!name || !category) {
+                updateStatus('Please enter both candidate name and category', 'error');
+                return;
+            }
+
+            try {
+                updateStatus('Adding candidate...', 'info');
+                const tx = await contract.addCandidate(name, category);
+                await tx.wait();
+
+                updateStatus(`Candidate "${name}" added successfully!`, 'success');
+
+                // Clear form
+                document.getElementById('candidateName').value = '';
+                document.getElementById('candidateCategory').value = '';
+
+                // Reload candidates
+                await loadCandidates();
+
+            } catch (error) {
+                console.error('Error adding candidate:', error);
+                updateStatus('Failed to add candidate: ' + error.message, 'error');
+            }
+        }
+
+        async function authorizeVoter() {
+            if (!isAdmin) return;
+
+            const address = document.getElementById('voterAddress').value.trim();
+
+            if (!address.match(/^0x[a-fA-F0-9]{40}$/)) {
+                updateStatus('Please enter a valid Ethereum address', 'error');
+                return;
+            }
+
+            try {
+                updateStatus('Authorizing voter...', 'info');
+                const tx = await contract.authorizeVoter(address);
+                await tx.wait();
+
+                updateStatus(`Voter ${address} authorized successfully!`, 'success');
+                document.getElementById('voterAddress').value = '';
+
+            } catch (error) {
+                console.error('Error authorizing voter:', error);
+                updateStatus('Failed to authorize voter: ' + error.message, 'error');
+            }
+        }
+
+        async function loadCandidates() {
+            if (!isAdmin) return;
+
+            try {
+                const select = document.getElementById('selectedCandidates');
+                select.innerHTML = '';
+
+                // Load candidates (simplified - in a real app, you'd track candidate IDs)
+                for (let i = 1; i <= 20; i++) {
+                    try {
+                        const candidateInfo = await contract.getCandidateInfo(i);
+                        if (candidateInfo[2]) { // isActive
+                            const option = document.createElement('option');
+                            option.value = i;
+                            option.textContent = `${candidateInfo[0]} (${candidateInfo[1]})`;
+                            select.appendChild(option);
+                            allCandidates[i] = candidateInfo;
+                        }
+                    } catch (error) {
+                        // Candidate doesn't exist, continue
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading candidates:', error);
+            }
+        }
+
+        async function createEvent() {
+            if (!isAdmin) return;
+
+            const eventName = document.getElementById('eventName').value.trim();
+            const eventDescription = document.getElementById('eventDescription').value.trim();
+            const selectedOptions = Array.from(document.getElementById('selectedCandidates').selectedOptions);
+
+            if (!eventName || !eventDescription || selectedOptions.length < 2) {
+                updateStatus('Please fill all fields and select at least 2 candidates', 'error');
+                return;
+            }
+
+            const candidateIds = selectedOptions.map(option => parseInt(option.value));
+
+            try {
+                updateStatus('Creating voting event...', 'info');
+                const tx = await contract.createVotingEvent(eventName, eventDescription, candidateIds);
+                await tx.wait();
+
+                updateStatus('Voting event created successfully!', 'success');
+
+                // Clear form
+                document.getElementById('eventName').value = '';
+                document.getElementById('eventDescription').value = '';
+                document.getElementById('selectedCandidates').selectedIndex = -1;
+
+                // Reload current event
+                await loadCurrentEvent();
+
+            } catch (error) {
+                console.error('Error creating event:', error);
+                updateStatus('Failed to create event: ' + error.message, 'error');
+            }
+        }
+
+        async function submitVote() {
+            if (!selectedCandidate || !currentEvent) return;
+
+            try {
+                updateStatus('Submitting vote...', 'info');
+                const tx = await contract.castVote(currentEvent.id, selectedCandidate);
+                await tx.wait();
+
+                updateStatus('Vote submitted successfully!', 'success');
+
+                // Update voting status
+                await checkVotingStatus();
+
+            } catch (error) {
+                console.error('Error submitting vote:', error);
+                updateStatus('Failed to submit vote: ' + error.message, 'error');
+            }
+        }
+
+        async function endVoting() {
+            if (!isAdmin || !currentEvent) return;
+
+            try {
+                updateStatus('Ending voting...', 'info');
+                const tx = await contract.endVoting(currentEvent.id);
+                await tx.wait();
+
+                updateStatus('Voting ended successfully!', 'success');
+                await loadCurrentEvent();
+
+            } catch (error) {
+                console.error('Error ending voting:', error);
+                updateStatus('Failed to end voting: ' + error.message, 'error');
+            }
+        }
+
+        async function revealResults() {
+            if (!isAdmin || !currentEvent) return;
+
+            try {
+                updateStatus('Requesting vote decryption...', 'info');
+                const tx = await contract.requestVoteDecryption(currentEvent.id);
+                await tx.wait();
+
+                updateStatus('Results reveal requested successfully!', 'success');
+
+                // Wait a bit and reload event to check for results
+                setTimeout(async () => {
+                    await loadCurrentEvent();
+                }, 5000);
+
+            } catch (error) {
+                console.error('Error revealing results:', error);
+                updateStatus('Failed to reveal results: ' + error.message, 'error');
+            }
+        }
+
+        async function displayResults() {
+            if (!currentEvent || !currentEvent.resultsRevealed) return;
+
+            try {
+                const resultsSection = document.getElementById('resultsSection');
+                const resultsContent = document.getElementById('resultsContent');
+
+                if (currentEvent.winnerId > 0) {
+                    const winnerInfo = await contract.getCandidateInfo(currentEvent.winnerId);
+
+                    resultsContent.innerHTML = `
+                        <div class="winner-announcement">
+                            <h3>🎉 Winner: ${winnerInfo[0]}</h3>
+                            <p><strong>Category:</strong> ${winnerInfo[1]}</p>
+                            <p><strong>Total Votes:</strong> ${currentEvent.totalVotes}</p>
+                        </div>
+                    `;
+                } else {
+                    resultsContent.innerHTML = `
+                        <div class="status info">
+                            No winner determined yet or no votes were cast.
+                        </div>
+                    `;
+                }
+
+                resultsSection.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error displaying results:', error);
+            }
+        }
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessages');
+            const statusElement = document.createElement('div');
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = message;
+
+            statusDiv.appendChild(statusElement);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                statusElement.remove();
+            }, 5000);
+
+            // Scroll to status
+            statusElement.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function formatDate(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+    </script>
+</body>
+</html>
