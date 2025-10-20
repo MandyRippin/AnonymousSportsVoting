@@ -1,0 +1,128 @@
+name: Security and Performance Audit
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security audit daily at 00:00 UTC
+    - cron: '0 0 * * *'
+
+jobs:
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Run Solidity linter
+        run: npm run lint:sol
+        continue-on-error: true
+
+      - name: Run JavaScript linter
+        run: npm run lint:js
+        continue-on-error: true
+
+      - name: Check code formatting
+        run: npm run format:check
+
+      - name: Run security checks
+        run: npm run security:check
+
+      - name: Compile contracts
+        run: npm run compile
+
+      - name: Run tests
+        run: npm test
+        continue-on-error: true
+
+  gas-optimization:
+    name: Gas Optimization Report
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate gas report
+        run: REPORT_GAS=true npm test
+        continue-on-error: true
+
+      - name: Upload gas report
+        uses: actions/upload-artifact@v3
+        with:
+          name: gas-report
+          path: gas-report.txt
+        if: always()
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Prettier
+        run: npm run format:check
+
+      - name: Run ESLint
+        run: npm run lint:js
+
+      - name: Run Solhint
+        run: npm run lint:sol
+
+      - name: Check for TODOs
+        run: |
+          if grep -r "TODO\|FIXME\|XXX" --include="*.sol" --include="*.js" .; then
+            echo "Warning: Found TODO/FIXME/XXX comments"
+          fi
+        continue-on-error: true
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        with:
+          fail-on-severity: moderate
