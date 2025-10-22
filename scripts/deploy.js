@@ -1,27 +1,48 @@
 const hre = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
-  console.log("Deploying Anonymous Sports Voting contract...");
+  console.log("=== Starting Deployment ===\n");
 
-  // Get the ContractFactory and Signers here.
+  // Get the ContractFactory and Signers
   const [deployer] = await hre.ethers.getSigners();
 
-  console.log("Deploying contracts with the account:", deployer.address);
-  console.log("Account balance:", (await deployer.provider.getBalance(deployer.address)).toString());
+  console.log("Deploying contracts with account:", deployer.address);
+  const balance = await deployer.provider.getBalance(deployer.address);
+  console.log("Account balance:", hre.ethers.formatEther(balance), "ETH");
+  console.log("Network:", hre.network.name, "\n");
 
   // Deploy the contract
-  const AnonymousSportsVoting = await hre.ethers.getContractFactory("AnonymousSportsVoting");
-  const votingContract = await AnonymousSportsVoting.deploy();
+  console.log("Deploying contract...");
+  const Contract = await hre.ethers.getContractFactory("AnonymousSportsVoting");
+  const contract = await Contract.deploy();
 
-  await votingContract.waitForDeployment();
+  await contract.waitForDeployment();
 
-  const contractAddress = await votingContract.getAddress();
-  console.log("Anonymous Sports Voting contract deployed to:", contractAddress);
+  const contractAddress = await contract.getAddress();
+  console.log("Contract deployed to:", contractAddress);
+
+  // Save deployment information
+  const deploymentInfo = {
+    contractName: "AnonymousSportsVoting",
+    contractAddress: contractAddress,
+    deployer: deployer.address,
+    network: hre.network.name,
+    chainId: hre.network.config.chainId,
+    deploymentTime: new Date().toISOString(),
+    blockNumber: await deployer.provider.getBlockNumber(),
+    constructorArgs: []
+  };
+
+  const deploymentPath = path.join(__dirname, "../deployment-info.json");
+  fs.writeFileSync(deploymentPath, JSON.stringify(deploymentInfo, null, 2));
+  console.log("\n✓ Deployment info saved to deployment-info.json");
 
   // Verify the contract on Etherscan if not on local network
   if (hre.network.name !== "hardhat" && hre.network.name !== "localfhenix") {
-    console.log("Waiting for block confirmations...");
-    await votingContract.deploymentTransaction().wait(6);
+    console.log("\nWaiting for block confirmations...");
+    await contract.deploymentTransaction().wait(6);
 
     console.log("Verifying contract on Etherscan...");
     try {
@@ -29,52 +50,74 @@ async function main() {
         address: contractAddress,
         constructorArguments: [],
       });
-      console.log("Contract verified successfully");
+      console.log("✓ Contract verified successfully");
     } catch (error) {
-      console.log("Verification failed:", error.message);
+      if (error.message.includes("Already Verified")) {
+        console.log("✓ Contract already verified");
+      } else {
+        console.log("✗ Verification failed:", error.message);
+      }
     }
   }
 
-  // Initialize with some sample data
-  console.log("\nInitializing with sample sports categories and candidates...");
+  // Initialize with sample data
+  console.log("\n=== Initializing Contract ===");
 
   try {
-    // Add some sample candidates
-    const tx1 = await votingContract.addCandidate("Outstanding Athlete", "Best Performance");
-    await tx1.wait();
-    console.log("Added candidate 1: Outstanding Athlete");
+    // Add sample candidates
+    console.log("Adding candidates...");
+    let tx = await contract.addCandidate("Outstanding Athlete", "Best Performance");
+    await tx.wait();
+    console.log("✓ Added candidate 1: Outstanding Athlete");
 
-    const tx2 = await votingContract.addCandidate("Rising Star", "Newcomer Award");
-    await tx2.wait();
-    console.log("Added candidate 2: Rising Star");
+    tx = await contract.addCandidate("Rising Star", "Newcomer Award");
+    await tx.wait();
+    console.log("✓ Added candidate 2: Rising Star");
 
-    const tx3 = await votingContract.addCandidate("Team Player", "Team Spirit");
-    await tx3.wait();
-    console.log("Added candidate 3: Team Player");
+    tx = await contract.addCandidate("Team Player", "Team Spirit");
+    await tx.wait();
+    console.log("✓ Added candidate 3: Team Player");
 
-    const tx4 = await votingContract.addCandidate("Coach Excellence", "Leadership Award");
-    await tx4.wait();
-    console.log("Added candidate 4: Coach Excellence");
+    tx = await contract.addCandidate("Coach Excellence", "Leadership Award");
+    await tx.wait();
+    console.log("✓ Added candidate 4: Coach Excellence");
 
     // Create a sample voting event
+    console.log("\nCreating voting event...");
     const candidateIds = [1, 2, 3, 4];
-    const tx5 = await votingContract.createVotingEvent(
-      "Annual Sports Awards 2024",
-      "Vote for the best performers in various sports categories this year",
+    tx = await contract.createVotingEvent(
+      "Annual Awards 2024",
+      "Vote for the best performers in various categories this year",
       candidateIds
     );
-    await tx5.wait();
-    console.log("Created voting event: Annual Sports Awards 2024");
+    await tx.wait();
+    console.log("✓ Created voting event: Annual Awards 2024");
 
-    console.log("\nDeployment and initialization completed successfully!");
-    console.log("Contract functions available:");
-    console.log("- authorizeVoter(address): Grant voting permission");
-    console.log("- castVote(eventId, candidateId): Submit encrypted vote");
-    console.log("- getEventInfo(eventId): Get event details");
-    console.log("- getCandidateInfo(candidateId): Get candidate information");
+    console.log("\n=== Deployment Complete ===");
+    console.log("\nContract Information:");
+    console.log("  Address:", contractAddress);
+    console.log("  Network:", hre.network.name);
+    console.log("  Admin:", deployer.address);
+    
+    if (hre.network.name === "sepolia") {
+      console.log("\nEtherscan:");
+      console.log("  Contract:", "https://sepolia.etherscan.io/address/" + contractAddress);
+      console.log("  Deployer:", "https://sepolia.etherscan.io/address/" + deployer.address);
+    }
+
+    console.log("\nAvailable Functions:");
+    console.log("  - authorizeVoter(address): Grant voting permission");
+    console.log("  - castVote(eventId, candidateId): Submit encrypted vote");
+    console.log("  - getEventInfo(eventId): Get event details");
+    console.log("  - getCandidateInfo(candidateId): Get candidate information");
+    console.log("\nNext Steps:");
+    console.log("  1. Run 'npm run verify' to verify on Etherscan (if not already done)");
+    console.log("  2. Run 'npm run interact' to interact with the contract");
+    console.log("  3. Check DEPLOYMENT.md for detailed deployment documentation\n");
 
   } catch (error) {
-    console.log("Initialization failed:", error.message);
+    console.log("\n✗ Initialization failed:", error.message);
+    console.log("Contract deployed but not initialized. You can initialize manually.");
   }
 }
 
