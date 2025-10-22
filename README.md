@@ -1,16 +1,16 @@
-# Anonymous Sports Voting
+# Privacy-Preserving Voting System with FHE
 
-A decentralized application for privacy-preserving sports awards voting using Fully Homomorphic Encryption (FHE) technology on the blockchain.
+A decentralized application for privacy-preserving voting using Fully Homomorphic Encryption (FHE) technology on the blockchain.
 
-## 🌟 Overview
+## Overview
 
-Anonymous Sports Voting is a revolutionary platform that enables secure, private, and transparent voting for sports events and awards. Built on Zama's fhEVM technology, it ensures complete voter anonymity while maintaining verifiable results.
+This project leverages FHE technology to enable secure, private, and transparent voting. Built on Zama's fhEVM technology, it ensures complete voter anonymity while maintaining verifiable results.
 
-## 🔐 Core Concepts
+## Core Concepts
 
 ### Fully Homomorphic Encryption (FHE)
 
-This project leverages FHE technology to perform computations on encrypted data without decryption. Votes are encrypted on-chain and tallied homomorphically, ensuring:
+This project uses FHE technology to perform computations on encrypted data without decryption. Votes are encrypted on-chain and tallied homomorphically, ensuring:
 
 - **Complete Privacy**: Individual votes remain encrypted and anonymous
 - **Verifiable Results**: Final tallies are accurate and tamper-proof
@@ -24,125 +24,193 @@ The FHE-enabled smart contract manages:
 - **Time-based Phases**: Automatic voting period management
 - **Access Control**: Only authorized voters can participate
 
-## 🏆 Use Cases
+## Technology Stack
 
-### Privacy-Preserving Sports Awards
-
-Perfect for conducting anonymous voting in:
-
-- **Player of the Year Awards**: Fans and committee members vote privately
-- **Best Team/Performance**: Community voting without influence
-- **Hall of Fame Selection**: Anonymous peer and fan voting
-- **MVP Awards**: Unbiased player recognition
-- **Sports Journalism Awards**: Industry professional voting
-
-## ✨ Key Features
-
-### For Voters
-- **Anonymous Voting**: Cast votes without revealing identity or choice
-- **One Vote Per Event**: Fair democratic process
-- **Real-time Status**: Track voting phases and participation
-- **Transparent Results**: Verifiable outcomes after reveal period
-
-### For Administrators
-- **Event Management**: Create and configure voting events
-- **Candidate Registration**: Add and manage nominees
-- **Voter Authorization**: Control who can participate
-- **Result Revelation**: Trigger decryption at appropriate time
-
-### Technical Features
-- **Encrypted On-Chain Storage**: All sensitive data protected by FHE
-- **Gas-Optimized**: Efficient contract design for cost savings
-- **MetaMask Integration**: Easy wallet connection
-- **Responsive Design**: Works on desktop and mobile devices
-
-## 🛠️ Technology Stack
-
-- **Blockchain**: Ethereum-compatible networks
+- **Blockchain**: Ethereum-compatible networks (Sepolia)
 - **Encryption**: Zama fhEVM (Fully Homomorphic Encryption)
-- **Smart Contracts**: Solidity with FHE libraries
+- **Smart Contracts**: Solidity 0.8.24 with FHE libraries
+- **Development Framework**: Hardhat
 - **Frontend**: Vanilla JavaScript with ethers.js
-- **Development**: Hardhat framework
+- **Testing**: Hardhat Test Environment
 
-## 📋 Smart Contract Details
+## Getting Started
 
-**Contract Address**: `0x3825C6a1BAf65d3fF39C3e0cEbbe4b76D2567488`
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+- MetaMask or compatible Web3 wallet
+- Sepolia testnet ETH
+
+### Installation
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Configure environment variables:
+```bash
+cp .env.example .env
+```
+
+Edit .env and add your configuration.
+
+### Compilation
+
+Compile the smart contracts:
+```bash
+npm run compile
+```
+
+### Testing
+
+Run the test suite:
+```bash
+npm test
+```
+
+Run simulation on local network:
+```bash
+npm run simulate
+```
+
+### Deployment
+
+Deploy to Sepolia Testnet:
+```bash
+npm run deploy
+```
+
+### Contract Verification
+
+Verify the deployed contract on Etherscan:
+```bash
+npm run verify
+```
+
+### Contract Interaction
+
+Interact with the deployed contract:
+```bash
+npm run interact
+```
+
+## Smart Contract Details
+
+### Contract Address (Sepolia)
+
+- **Address**: Check deployment-info.json after deployment
+- **Network**: Sepolia Testnet
+- **Chain ID**: 11155111
 
 ### Main Functions
 
-**Voter Functions:**
-- `castVote(eventId, candidateId)`: Submit encrypted vote
-- `getVoterStatus(eventId, voter)`: Check voting status
+#### Admin Functions
 
-**Admin Functions:**
-- `createVotingEvent(name, description, candidateIds)`: Initialize new event
-- `addCandidate(name, category)`: Register nominee
-- `authorizeVoter(address)`: Grant voting permission
-- `endVoting(eventId)`: Close voting period
-- `requestVoteDecryption(eventId)`: Reveal results
+- authorizeVoter(address voter): Grant voting permission to an address
+- revokeVoter(address voter): Revoke voting permission
+- addCandidate(string name, string category): Add a new candidate
+- createVotingEvent(...): Create new voting event
+- endVoting(uint32 eventId): End the voting period
+- requestVoteDecryption(uint32 eventId): Trigger result revelation
 
-**View Functions:**
-- `getEventInfo(eventId)`: Retrieve event details
-- `getCandidateInfo(candidateId)`: Get candidate information
-- `isVotingActive(eventId)`: Check voting status
+#### Voter Functions
 
-## 🎯 How It Works
+- castVote(uint32 eventId, uint32 candidateId): Submit an encrypted vote
+
+#### View Functions
+
+- getEventInfo(uint32 eventId): Retrieve event details
+- getCandidateInfo(uint32 candidateId): Get candidate information
+- getVoterStatus(uint32 eventId, address voter): Check if voter has voted
+- isVotingActive(uint32 eventId): Check if voting is currently active
+- isRevealPeriodActive(uint32 eventId): Check if reveal period is active
+
+## Available Scripts
+
+- npm run compile - Compile smart contracts
+- npm test - Run test suite
+- npm run deploy - Deploy to Sepolia testnet
+- npm run deploy:local - Deploy to local network
+- npm run verify - Verify contract on Etherscan
+- npm run interact - Interact with deployed contract
+- npm run simulate - Run simulation on local network
+- npm run node - Start local Hardhat node
+- npm run clean - Clean artifacts and cache
+- npm run coverage - Generate test coverage report
+
+## How It Works
 
 ### Voting Process
 
-1. **Event Creation**: Admin creates voting event with candidates
-2. **Voter Authorization**: Eligible voters are authorized
-3. **Anonymous Voting**: Voters cast encrypted votes
-4. **Vote Tallying**: Homomorphic computation counts votes
-5. **Result Reveal**: Admin triggers decryption after voting ends
-6. **Winner Announcement**: Results published on-chain
+1. Event Creation: Admin creates a voting event with candidates
+2. Voter Authorization: Eligible voters are authorized by admin
+3. Anonymous Voting: Voters cast encrypted votes during voting period
+4. Vote Tallying: Homomorphic computation counts votes on encrypted data
+5. Result Reveal: Admin triggers decryption after voting ends
+6. Winner Announcement: Results are published on-chain
 
 ### Privacy Guarantees
 
-- **Vote Secrecy**: Individual votes never revealed
-- **Encrypted Tally**: Vote counts computed on encrypted data
-- **Delayed Decryption**: Results only revealed after voting closes
-- **Immutable Record**: All actions recorded on blockchain
+- Vote Secrecy: Individual votes are never revealed
+- Encrypted Tally: Vote counts are computed on encrypted data
+- Delayed Decryption: Results only revealed after voting closes
+- Immutable Record: All actions are recorded on blockchain
 
-## 🎬 Demo
+## Use Cases
 
-**Live Demo**: [https://anonymous-sports-voting.vercel.app/](https://anonymous-sports-voting.vercel.app/)
+Perfect for conducting anonymous voting in:
 
-**Video Demonstration**: Available - showcasing the complete voting workflow from event creation to result revelation.
+- Community Governance: DAO voting and proposals
+- Awards and Recognition: Anonymous selection processes
+- Organizational Decisions: Internal company voting
+- Public Polls: Survey and opinion collection
+- Election Systems: Democratic voting processes
 
-## 🔗 Resources
+## Key Features
 
-- **GitHub Repository**: [https://github.com/MandyRippin/AnonymousSportsVoting](https://github.com/MandyRippin/AnonymousSportsVoting)
-- **Live Application**: [https://anonymous-sports-voting.vercel.app/](https://anonymous-sports-voting.vercel.app/)
-- **Zama fhEVM Docs**: [https://docs.zama.ai/fhevm](https://docs.zama.ai/fhevm)
+### For Voters
+- Anonymous voting without revealing identity or choice
+- One vote per event for fair democratic process
+- Real-time voting status tracking
+- Transparent and verifiable results
 
-## 🌐 Network Support
+### For Administrators
+- Easy event creation and management
+- Flexible candidate registration
+- Granular voter authorization control
+- Automated time-based voting phases
 
-The application supports Ethereum-compatible networks with fhEVM capabilities:
-- Zama Devnet
-- Zama Testnet
-- Other fhEVM-enabled networks
+### Technical Features
+- Encrypted on-chain storage using FHE
+- Gas-optimized contract design
+- MetaMask integration
+- Responsive web interface
+- Comprehensive test coverage
 
-## 🔒 Security Considerations
+## Security Considerations
 
 - All votes are encrypted using FHE before storage
-- Smart contract audited for common vulnerabilities
 - Time-locked phases prevent manipulation
 - Access control restricts administrative functions
 - Voter authorization prevents Sybil attacks
 
-## 🤝 Contributing
+## Deployment Guide
 
-Contributions are welcome! This project demonstrates cutting-edge privacy technology in decentralized voting systems.
+For detailed deployment instructions, see DEPLOYMENT.md
 
-## 📞 Support
+## Resources
 
-For questions, issues, or feature requests, please visit the GitHub repository.
+- Hardhat Documentation: https://hardhat.org/docs
+- Zama fhEVM Documentation: https://docs.zama.ai/fhevm
+- Etherscan API: https://docs.etherscan.io/
+- Sepolia Faucet: https://sepoliafaucet.com/
 
-## 🙏 Acknowledgments
+## License
 
-Built with [Zama's fhEVM](https://www.zama.ai/fhevm) technology, enabling privacy-preserving smart contracts through Fully Homomorphic Encryption.
+This project is licensed under the MIT License.
 
----
+## Acknowledgments
 
-**Empowering Democratic Sports Awards with Privacy-Preserving Technology**
+Built with Zama's fhEVM technology, enabling privacy-preserving smart contracts through Fully Homomorphic Encryption.
