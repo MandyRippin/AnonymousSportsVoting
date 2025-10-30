@@ -1,0 +1,44 @@
+{
+  "name": "anonymous-sports-voting-react",
+  "version": "1.0.0",
+  "description": "Anonymous sports event voting system using Zama FHEVM with React",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy.js --network sepolia",
+    "test": "npx hardhat test",
+    "node": "npx hardhat node"
+  },
+  "keywords": [
+    "blockchain",
+    "sports",
+    "voting",
+    "privacy",
+    "fhe",
+    "zama",
+    "react",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@fhevm/universal-sdk": "file:../../packages/fhevm-sdk",
+    "ethers": "^6.10.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@fhevm/solidity": "^0.5.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "dotenv": "^16.0.3",
+    "hardhat": "^2.19.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0"
+  }
+}

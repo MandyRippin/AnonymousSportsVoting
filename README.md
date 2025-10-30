@@ -6,6 +6,21 @@ A decentralized application for privacy-preserving voting using Fully Homomorphi
 
 This project leverages FHE technology to enable secure, private, and transparent voting. Built on Zama's fhEVM technology, it ensures complete voter anonymity while maintaining verifiable results.
 
+**This repository contains two frontend implementations:**
+
+| Feature | HTML/JavaScript | React TypeScript |
+|---------|----------------|------------------|
+| **Location** | Root directory (`index.html`) | `AnonymousSportsVoting/` |
+| **Framework** | Vanilla JavaScript | React 18 + TypeScript |
+| **Build Tool** | None (direct browser) | Vite 5 |
+| **Development** | Open HTML file | `npm run dev` |
+| **Type Safety** | ❌ No | ✅ Full TypeScript |
+| **Hot Reload** | ❌ No | ✅ Yes |
+| **Component Architecture** | ❌ Monolithic | ✅ Modular components |
+| **SDK Integration** | ⚠️ Basic | ✅ @fhevm/universal-sdk |
+| **Best For** | Quick testing, prototypes | Production applications |
+| **Recommended** | 🔵 Learning/Testing | 🟢 Production Use |
+
 ## Core Concepts
 
 ### Fully Homomorphic Encryption (FHE)
@@ -26,12 +41,83 @@ The FHE-enabled smart contract manages:
 
 ## Technology Stack
 
+### Backend & Smart Contracts
 - **Blockchain**: Ethereum-compatible networks (Sepolia)
 - **Encryption**: Zama fhEVM (Fully Homomorphic Encryption)
 - **Smart Contracts**: Solidity 0.8.24 with FHE libraries
 - **Development Framework**: Hardhat
-- **Frontend**: Vanilla JavaScript with ethers.js
 - **Testing**: Hardhat Test Environment
+
+### Frontend Applications
+
+#### Original Implementation (index.html)
+- **Frontend**: Vanilla JavaScript with ethers.js v5
+- **Styling**: CSS with inline styles
+- **Architecture**: Single-page HTML application
+
+#### React Application (AnonymousSportsVoting/)
+- **Frontend Framework**: React 18 with TypeScript
+- **Build Tool**: Vite 5 for fast development and optimized builds
+- **Blockchain Library**: ethers.js v6
+- **FHEVM Integration**: @fhevm/universal-sdk
+- **State Management**: React Hooks with custom hooks
+- **Styling**: Modern CSS with gradients and animations
+- **Type Safety**: Full TypeScript support with strict mode
+- **Component Architecture**: Modular component design
+  - 6 React components (WalletSection, AdminSection, VotingSection, etc.)
+  - 2 custom hooks (useContract, useVotingEvent)
+  - Type definitions and utilities
+
+## Project Structure
+
+This repository contains two frontend implementations of the same voting system:
+
+### 1. Original HTML/JavaScript Implementation (Root Directory)
+```
+D:\
+├── index.html              # Single-page application
+├── contracts/              # Solidity smart contracts
+├── scripts/                # Hardhat deployment scripts
+├── hardhat.config.js       # Hardhat configuration
+└── package.json            # Dependencies
+```
+
+**Run the original implementation:**
+- Open `index.html` in a web browser with MetaMask installed
+- Or use: `npx serve .` and navigate to `http://localhost:3000`
+
+### 2. React TypeScript Application (AnonymousSportsVoting/)
+```
+AnonymousSportsVoting/
+├── src/
+│   ├── components/         # React components
+│   │   ├── AdminSection.tsx
+│   │   ├── CandidateCard.tsx
+│   │   ├── ResultsSection.tsx
+│   │   ├── StatusMessage.tsx
+│   │   ├── VotingSection.tsx
+│   │   └── WalletSection.tsx
+│   ├── hooks/              # Custom React hooks
+│   │   ├── useContract.ts
+│   │   └── useVotingEvent.ts
+│   ├── lib/                # Utilities
+│   ├── types/              # TypeScript definitions
+│   ├── App.tsx             # Main component
+│   ├── main.tsx            # Entry point
+│   └── styles.css          # Global styles
+├── contracts/              # Smart contracts (shared)
+├── vite.config.ts          # Vite configuration
+├── tsconfig.json           # TypeScript configuration
+└── package.json            # Dependencies
+```
+
+**Run the React application:**
+```bash
+cd AnonymousSportsVoting
+npm install
+npm run dev
+```
+Then open `http://localhost:5173`
 
 ## Getting Started
 
@@ -129,16 +215,25 @@ npm run interact
 
 ## Available Scripts
 
-- npm run compile - Compile smart contracts
-- npm test - Run test suite
-- npm run deploy - Deploy to Sepolia testnet
-- npm run deploy:local - Deploy to local network
-- npm run verify - Verify contract on Etherscan
-- npm run interact - Interact with deployed contract
-- npm run simulate - Run simulation on local network
-- npm run node - Start local Hardhat node
-- npm run clean - Clean artifacts and cache
-- npm run coverage - Generate test coverage report
+### Smart Contract Scripts (Root Directory)
+- `npm run compile` - Compile smart contracts
+- `npm test` - Run test suite
+- `npm run deploy` - Deploy to Sepolia testnet
+- `npm run deploy:local` - Deploy to local network
+- `npm run verify` - Verify contract on Etherscan
+- `npm run interact` - Interact with deployed contract
+- `npm run simulate` - Run simulation on local network
+- `npm run node` - Start local Hardhat node
+- `npm run clean` - Clean artifacts and cache
+- `npm run coverage` - Generate test coverage report
+
+### React Application Scripts (AnonymousSportsVoting/)
+- `npm run dev` - Start development server with hot reload (port 5173)
+- `npm run build` - Build production bundle
+- `npm run preview` - Preview production build
+- `npm run compile` - Compile smart contracts
+- `npm run deploy` - Deploy contracts to network
+- `npm run test` - Run contract tests
 
 ## How It Works
 
@@ -189,6 +284,27 @@ Perfect for conducting anonymous voting in:
 - Responsive web interface
 - Comprehensive test coverage
 
+## Choosing Between Implementations
+
+### Use the Original HTML Implementation When:
+- ✅ You need a simple, lightweight solution
+- ✅ No build process required
+- ✅ Quick prototyping or testing
+- ✅ Hosting on simple static servers
+- ✅ Minimal dependencies preferred
+
+### Use the React TypeScript Implementation When:
+- ✅ Building a production application
+- ✅ Need type safety and better IDE support
+- ✅ Want modular, maintainable code
+- ✅ Planning to extend functionality
+- ✅ Prefer modern development workflow
+- ✅ Need hot module replacement during development
+- ✅ Want to integrate FHEVM SDK properly
+- ✅ Require component-based architecture
+
+**Recommendation:** For new projects or production use, the **React TypeScript implementation** (`AnonymousSportsVoting/`) is recommended as it provides better code organization, type safety, and maintainability.
+
 ## Security Considerations
 
 - All votes are encrypted using FHE before storage
@@ -200,12 +316,50 @@ Perfect for conducting anonymous voting in:
 
 For detailed deployment instructions, see DEPLOYMENT.md
 
+## React Application Features
+
+The React TypeScript implementation (`AnonymousSportsVoting/`) includes additional features:
+
+### Enhanced User Experience
+- **Component-Based UI**: Modular, reusable React components
+- **Auto-Dismiss Notifications**: Toast messages with smooth animations
+- **Loading States**: Visual feedback during transactions
+- **Error Handling**: Comprehensive error messages and recovery
+
+### Developer Experience
+- **Hot Module Replacement**: Instant updates during development
+- **TypeScript IntelliSense**: Full autocomplete and type checking
+- **Custom Hooks**: Reusable state management logic
+  - `useContract`: Manages wallet connection and contract instance
+  - `useVotingEvent`: Handles event loading and state
+- **Vite Build Tool**: Fast builds and optimized production bundles
+
+### Code Quality
+- **Type Safety**: All components and functions fully typed
+- **Modular Architecture**: Clean separation of concerns
+- **Utility Functions**: Helper functions for formatting and validation
+- **Constants Management**: Centralized contract ABI and addresses
+
+### Documentation
+- Comprehensive README with installation and usage
+- Quick start guide (QUICKSTART.md)
+- Inline code comments and JSDoc
+- Component and hook documentation
+
+For detailed information about the React implementation, see:
+- `AnonymousSportsVoting/README.md` - Full documentation
+- `AnonymousSportsVoting/QUICKSTART.md` - Quick start guide
+
 ## Resources
 
-- Hardhat Documentation: https://hardhat.org/docs
-- Zama fhEVM Documentation: https://docs.zama.ai/fhevm
-- Etherscan API: https://docs.etherscan.io/
-- Sepolia Faucet: https://sepoliafaucet.com/
+- **React Documentation**: https://react.dev/
+- **Vite Documentation**: https://vitejs.dev/
+- **TypeScript Handbook**: https://www.typescriptlang.org/docs/
+- **Hardhat Documentation**: https://hardhat.org/docs
+- **Zama fhEVM Documentation**: https://docs.zama.ai/fhevm
+- **ethers.js v6 Documentation**: https://docs.ethers.org/v6/
+- **Etherscan API**: https://docs.etherscan.io/
+- **Sepolia Faucet**: https://sepoliafaucet.com/
 
 ## License
 
