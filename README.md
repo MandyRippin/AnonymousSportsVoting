@@ -6,6 +6,8 @@ A decentralized application for privacy-preserving voting using Fully Homomorphi
 
 This project leverages FHE technology to enable secure, private, and transparent voting. Built on Zama's fhEVM technology, it ensures complete voter anonymity while maintaining verifiable results.
 
+[Live demo](https://anonymous-sports-voting.vercel.app/) [Demo video: demo.mp4]
+
 **This repository contains two frontend implementations:**
 
 | Feature | HTML/JavaScript | React TypeScript |
