@@ -40,6 +40,9 @@ The FHE-enabled smart contract manages:
 - **Homomorphic Vote Tallying**: Vote counting happens on encrypted data
 - **Time-based Phases**: Automatic voting period management
 - **Access Control**: Only authorized voters can participate
+- **Gateway Callback Pattern**: Asynchronous decryption via oracle
+- **Timeout Protection**: Prevents permanent fund locking
+- **Refund Mechanism**: Automatic refunds on decryption failure
 
 ## Technology Stack
 
@@ -196,24 +199,27 @@ npm run interact
 
 #### Admin Functions
 
-- authorizeVoter(address voter): Grant voting permission to an address
-- revokeVoter(address voter): Revoke voting permission
-- addCandidate(string name, string category): Add a new candidate
-- createVotingEvent(...): Create new voting event
-- endVoting(uint32 eventId): End the voting period
-- requestVoteDecryption(uint32 eventId): Trigger result revelation
+- `authorizeVoter(address voter)`: Grant voting permission to an address
+- `revokeVoter(address voter)`: Revoke voting permission
+- `addCandidate(string name, string category)`: Add a new candidate
+- `createVotingEvent(...)`: Create new voting event
+- `endVoting(uint32 eventId)`: End the voting period
+- `requestVoteDecryption(uint32 eventId)`: Trigger Gateway callback for decryption
+- `handleDecryptionFailure(uint32 eventId)`: Handle oracle timeout and enable refunds
 
 #### Voter Functions
 
-- castVote(uint32 eventId, uint32 candidateId): Submit an encrypted vote
+- `castVote(uint32 eventId, uint32 candidateId)`: Submit an encrypted vote
+- `requestRefund(uint32 eventId)`: Claim refund when decryption fails
 
 #### View Functions
 
-- getEventInfo(uint32 eventId): Retrieve event details
-- getCandidateInfo(uint32 candidateId): Get candidate information
-- getVoterStatus(uint32 eventId, address voter): Check if voter has voted
-- isVotingActive(uint32 eventId): Check if voting is currently active
-- isRevealPeriodActive(uint32 eventId): Check if reveal period is active
+- `getEventInfo(uint32 eventId)`: Retrieve event details
+- `getEventStatus(uint32 eventId)`: Get decryption status and timeout info
+- `getCandidateInfo(uint32 candidateId)`: Get candidate information
+- `getVoterStatus(uint32 eventId, address voter)`: Check if voter has voted
+- `isVotingActive(uint32 eventId)`: Check if voting is currently active
+- `isRevealPeriodActive(uint32 eventId)`: Check if reveal period is active
 
 ## Available Scripts
 
@@ -241,19 +247,48 @@ npm run interact
 
 ### Voting Process
 
-1. Event Creation: Admin creates a voting event with candidates
-2. Voter Authorization: Eligible voters are authorized by admin
-3. Anonymous Voting: Voters cast encrypted votes during voting period
-4. Vote Tallying: Homomorphic computation counts votes on encrypted data
-5. Result Reveal: Admin triggers decryption after voting ends
-6. Winner Announcement: Results are published on-chain
+1. **Event Creation**: Admin creates a voting event with candidates
+2. **Voter Authorization**: Eligible voters are authorized by admin
+3. **Anonymous Voting**: Voters cast encrypted votes during voting period
+4. **Vote Tallying**: Homomorphic computation counts votes on encrypted data
+5. **Decryption Request**: Admin triggers Gateway callback for decryption
+6. **Oracle Processing**: Gateway decrypts votes and calls contract callback
+7. **Result Reveal**: Decrypted results are published on-chain
+8. **Refund (if needed)**: Voters claim refunds if decryption fails
+
+### Gateway Callback Pattern
+
+The system implements an asynchronous decryption architecture:
+
+```
+User Vote → Encrypted Storage → Admin Request → Gateway Oracle → Callback → Results
+                                                    ↓
+                                         [If Timeout] → Refund Mechanism
+```
+
+**Key Benefits:**
+- Non-blocking vote submission
+- Oracle-based trusted decryption
+- Automatic timeout handling
+- Voter fund protection
+
+### Timeout Protection
+
+| Phase | Duration | Description |
+|-------|----------|-------------|
+| Voting | 7 days | Active voting period |
+| Reveal | 1 day | Decryption request window |
+| Decryption Timeout | 3 days | Oracle response deadline |
+
+If the oracle fails to respond within the deadline, voters can claim full refunds.
 
 ### Privacy Guarantees
 
-- Vote Secrecy: Individual votes are never revealed
-- Encrypted Tally: Vote counts are computed on encrypted data
-- Delayed Decryption: Results only revealed after voting closes
-- Immutable Record: All actions are recorded on blockchain
+- **Vote Secrecy**: Individual votes are never revealed
+- **Encrypted Tally**: Vote counts are computed on encrypted data
+- **Delayed Decryption**: Results only revealed after voting closes
+- **Immutable Record**: All actions are recorded on blockchain
+- **Cryptographic Verification**: Oracle responses verified with signatures
 
 ## Use Cases
 
@@ -285,6 +320,10 @@ Perfect for conducting anonymous voting in:
 - MetaMask integration
 - Responsive web interface
 - Comprehensive test coverage
+- Gateway callback pattern for async decryption
+- Timeout protection with refund mechanism
+- Input validation and overflow protection
+- Cryptographic proof verification
 
 ## Choosing Between Implementations
 
@@ -313,6 +352,17 @@ Perfect for conducting anonymous voting in:
 - Time-locked phases prevent manipulation
 - Access control restricts administrative functions
 - Voter authorization prevents Sybil attacks
+- **Input Validation**: String length (1-256 bytes) and array length (1-100 items) limits
+- **Overflow Protection**: Safe arithmetic with explicit bounds checking
+- **Reentrancy Prevention**: Checks-Effects-Interactions pattern for refunds
+- **Timeout Protection**: Three-layer timeout system prevents permanent fund locking
+- **Cryptographic Verification**: Oracle responses validated with `FHE.checkSignatures()`
+
+### Security Documents
+
+- **[SECURITY.md](./SECURITY.md)**: Comprehensive security analysis and threat model
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)**: System architecture and design patterns
+- **[API.md](./API.md)**: Smart contract API reference
 
 ## Deployment Guide
 
@@ -351,6 +401,38 @@ The React TypeScript implementation (`AnonymousSportsVoting/`) includes addition
 For detailed information about the React implementation, see:
 - `AnonymousSportsVoting/README.md` - Full documentation
 - `AnonymousSportsVoting/QUICKSTART.md` - Quick start guide
+
+## Advanced Features
+
+### Gateway Callback Architecture
+
+The contract implements an innovative asynchronous decryption pattern:
+
+1. **Request Phase**: Admin calls `requestVoteDecryption()` after voting ends
+2. **Oracle Phase**: Gateway network processes encrypted vote tallies
+3. **Callback Phase**: Oracle calls `processVoteResults()` with decrypted values
+4. **Verification Phase**: Contract verifies cryptographic proof before accepting
+
+### Refund Mechanism
+
+When decryption fails (oracle timeout or error):
+
+```solidity
+// Admin marks failure after timeout
+await contract.handleDecryptionFailure(eventId);
+
+// Voters claim refunds
+await contract.requestRefund(eventId);
+```
+
+### Privacy Techniques
+
+| Problem | Solution |
+|---------|----------|
+| Division information leakage | Random multiplier obfuscation |
+| Price/value exposure | Fuzzy computation techniques |
+| Async processing | Gateway callback pattern |
+| Gas optimization | Efficient HCU (Homomorphic Compute Unit) usage |
 
 ## Resources
 
